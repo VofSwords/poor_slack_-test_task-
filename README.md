@@ -10,7 +10,10 @@ Technologies: React
 
 ## Installation
 
-`git clone https://github.com/VofSwords/poor_slack_-test_task-.git`
+```bash
+git clone https://github.com/VofSwords/poor_slack_-test_task-.git
+cd poor_slack_-test_task-
+```
 
 ## Available Scripts
 
