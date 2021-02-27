@@ -1,54 +1,89 @@
 import logo from './logo.svg';
 import './App.css';
 import React from 'react';
-import Menu from './components/menu';
-import Workspace from './components/workspace';
-import {API} from './config';
-import {CHANNELS} from "./dummyData"
+import {
+  BrowserRouter as Router,
+  NavLink,
+  Switch,
+  Route
+} from 'react-router-dom';
+import {
+  getChannels
+} from "./utils/fetch";
+import Notifi from "./components/notification";
+import { NoChannel, Welcome } from './components/screens';
+import Chat from './components/chat';
 
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      currentChannel: window.location.pathname.slice(1), //maybe better change to enum
-      channels: new Array()
+      channels: new Array(),
     };
 
     this.promises = [
-      {promise: this.getChannels(), then: res => this.setState({
-        channels: res
-      })}
+      {promise: getChannels(), then: channels => this.updateChannels(channels)}
     ];
   };
 
   componentDidMount() {
-    this.promises.forEach(element => element.promise.then(element.then));
+    this.promises
+      .forEach(element => 
+        element.promise.then(element.then)
+      );
   };
 
-  changeChannel(channel) {
+  updateChannels (channels) {
     this.setState({
-      currentChannel: channel
+      channels
     });
+    getChannels().then(channels => this.updateChannels(channels));
   };
 
-  async getChannels() {
-    //return await fetch(API + "/channels").then((res) => res.json().channels);
-    return await CHANNELS;
+  createPath(channel) {
+    return (
+      <Route path={`/${channel.id}`} key={channel.id}>
+        <Chat channel={channel} />
+      </Route>
+    );
+  };
+
+  createLink(channel) {
+    return (
+      <li key={channel.id}>
+        <NavLink to={`/${channel.id}`} activeClassName="current">{channel.name}</NavLink>
+        <Notifi />
+      </li>
+    );
   };
 
   render() {
+    const channels = this.state.channels;
+    const links = channels.map(channel => this.createLink(channel));
+    const pathes = channels.map(channel => this.createPath(channel));
+
     return (
       <div className="App">
+        <img src={logo}></img>
         Poor Slack
-        <Menu
-          current={this.state.currentChannel}
-          channelList={this.state.channels}
-          changeChannel={this.changeChannel.bind(this)}
-        />
-        <Workspace
-          channel={this.state.currentChannel}
-          channelList={this.state.channels}
-        />
+        <Router>
+          <div>
+            <nav>
+              <ul>
+                {links}
+              </ul>
+            </nav>
+            <Switch>
+              <Route exact path="/">
+                <Welcome />
+              </Route>
+                {pathes}
+              <Route path="*" children={({location}) => (
+                <NoChannel channel={location.pathname.slice(1)} />
+              )} />
+            </Switch>
+          </div>
+        </Router>
       </div>
     );
   };
